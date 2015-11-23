@@ -1,0 +1,618 @@
+<?xml version="1.0" encoding="utf-8"?>
+<addon addon_id="ThemeHouse_SpamRules" title="[⌂] Spam Rules" version_string="1.2.0" version_id="1447261019" url="http://xf.themehouse.io/" install_callback_class="ThemeHouse_Install" install_callback_method="install" uninstall_callback_class="ThemeHouse_Install" uninstall_callback_method="uninstall">
+  <admin_navigation>
+    <navigation navigation_id="spamRules" parent_navigation_id="options" display_order="500" link="spam-rules" admin_permission_id="spamRule" debug_only="0" hide_no_children="0"/>
+    <navigation navigation_id="userSpamRules" parent_navigation_id="usersSection" display_order="500" link="user-spam-rules" admin_permission_id="spamRule" debug_only="0" hide_no_children="0"/>
+  </admin_navigation>
+  <admin_permissions>
+    <admin_permission admin_permission_id="spamRule" display_order="3000"/>
+  </admin_permissions>
+  <admin_style_properties/>
+  <admin_templates>
+    <template title="th_helper_content_criteria_spamrules"><![CDATA[<xen:checkboxunit label="">
+	<xen:option name="content_criteria[contains_links][rule]" value="contains_links" label="{xen:phrase th_content_contains_at_least_x_links_spamrules}:" selected="{$contentCriteria.contains_links}">
+		<xen:disabled>
+			<xen:spinbox name="content_criteria[contains_links][data][links]" value="{$contentCriteria.contains_links.links}" size="5" />
+		</xen:disabled>
+	</xen:option>
+	<xen:option name="content_criteria[contains_uppercase][rule]" value="contains_uppercase" label="{xen:phrase th_content_contains_at_least_x_percent_uppercase_spamrules}:" selected="{$contentCriteria.contains_uppercase}">
+		<xen:disabled>
+			<xen:spinbox name="content_criteria[contains_uppercase][data][percent]" value="{$contentCriteria.contains_uppercase.percent}" size="5" />
+		</xen:disabled>
+	</xen:option>
+	<xen:html>
+		<ul>
+			<li><label for="ctrl_content_criteriacontains_wordsrule_contains_words"><input type="checkbox" name="content_criteria[contains_words][rule]" value="contains_words" class="Disabler" id="ctrl_content_criteriacontains_wordsrule_contains_words" {xen:checked {$contentCriteria.contains_words}} /> {xen:phrase th_content_contains_specific_words_spamrules}:</label>
+				<ul id="ctrl_content_criteriacontains_wordsrule_contains_words_Disabler">
+				<xen:set var="$counter">0</xen:set>
+					<xen:if is="{$contentCriteria.contains_words.words}">
+						<xen:foreach loop="$contentCriteria.contains_words.words" i="$counter" value="$choice">
+							<xen:if is="{$choice.word}">
+								<li>
+									<xen:textbox name="content_criteria[contains_words][data][words][{xen:calc '{$counter}-1'}][word]" value="{$choice.word}" placeholder="{xen:phrase word_or_phrase}" size="20" />
+									<input type="checkbox" name="content_criteria[contains_words][data][words][{xen:calc '{$counter}-1'}][exact]" value="1" {xen:checked {$choice.exact}} /> {xen:phrase match_exact_word}
+								</li>
+							</xen:if>
+						</xen:foreach>
+					</xen:if>
+
+					<li class="ContentCriteriaWordOptionListener">
+						<xen:textbox name="content_criteria[contains_words][data][words][{$counter}][word]" value="" placeholder="{xen:phrase word_or_phrase}" size="20" />
+						<input type="checkbox" name="content_criteria[contains_words][data][words][{$counter}][exact]" value="1" checked="checked" /> {xen:phrase match_exact_word}
+					</li>
+				</ul>
+			</li>
+		</ul>
+	</xen:html>
+</xen:checkboxunit>]]></template>
+    <template title="th_helper_request_criteria_spamrules"><![CDATA[<xen:checkboxunit label="">
+	<xen:option name="request_criteria[open_port][rule]" value="open_port" label="{xen:phrase th_user_has_open_port_userregspam}:" selected="{$requestCriteria.open_port}">
+		<xen:disabled>
+			<xen:spinbox name="request_criteria[open_port][data][port]" value="{$requestCriteria.open_port.port}" />
+		</xen:disabled>
+	</xen:option>
+</xen:checkboxunit>
+
+<xen:if is="{$countries}">
+	<xen:checkboxunit label="">
+		<xen:option name="request_criteria[geoip_country][rule]" value="geoip_country" label="{xen:phrase th_ip_address_is_registered_in_spamrules}:" selected="{$requestCriteria.geoip_country}">
+			<xen:disabled>
+				<xen:select name="request_criteria[geoip_country][data][countries]" size="5" multiple="true">
+					<xen:foreach loop="{$countries}" key="{$isoCode}" value="{$countryTitle}">
+						<xen:option value="{$isoCode}" label="{$countryTitle}" selected="{$requestCriteria.geoip_country.countries} AND in_array({$isoCode}, {$requestCriteria.geoip_country.countries})" />
+					</xen:foreach>
+				</xen:select>
+			</xen:disabled>
+		</xen:option>
+	</xen:checkboxunit>
+</xen:if>]]></template>
+    <template title="th_spam_rule_delete_spamrules"><![CDATA[<xen:title>{xen:phrase th_confirm_deletion_of_spam_rule_spamrules}: {$spamRule.title}</xen:title>
+
+<xen:h1>{xen:phrase th_confirm_deletion_of_spam_rule_spamrules}</xen:h1>
+
+<xen:navigation>
+	<xen:breadcrumb href="{xen:adminlink 'spam-rules/edit', $spamRule}">{$spamRule.title}</xen:breadcrumb>
+</xen:navigation>
+
+<xen:require css="delete_confirmation.css" />
+
+<xen:form action="{xen:adminlink 'spam-rules/delete', $spamRule}" class="deleteConfirmForm formOverlay">
+
+	<p>{xen:phrase th_please_confirm_want_to_delete_spam_rule_spamrules}:</p>
+	<strong><a href="{xen:adminlink 'spam-rules/edit', $spamRule}">{$spamRule.title}</a></strong>
+
+	<xen:submitunit save="{xen:phrase th_delete_spam_rule_spamrules}" />
+
+	<input type="hidden" name="_xfConfirm" value="1" />
+</xen:form>]]></template>
+    <template title="th_spam_rule_edit_spamrules"><![CDATA[<xen:title>{xen:if '{$spamRule.spam_rule_id}', '{xen:phrase th_edit_spam_rule_spamrules}: {$spamRule.title}', '{xen:phrase th_create_new_spam_rule_spamrules}'}</xen:title>
+
+<xen:h1>{xen:if '{$spamRule.spam_rule_id}', '{xen:phrase th_edit_spam_rule_spamrules}: <em>{$spamRule.title}</em>', '{xen:phrase th_create_new_spam_rule_spamrules}'}</xen:h1>
+
+<xen:if is="{$spamRule.spam_rule_id}">
+	<xen:navigation>
+		<xen:breadcrumb href="{xen:adminlink 'spam-rules'}#{xen:helper listitemid, $spamRule.spam_rule_id}">{$spamRule.title}</xen:breadcrumb>
+	</xen:navigation>
+</xen:if>
+
+<xen:form action="{xen:adminlink 'spam-rules/save', $spamRule}"
+	class="AutoValidator"
+	data-fieldValidatorUrl="{xen:adminlink '/validate-field', $spamRule}"
+	data-redirect="on">
+	
+	<ul class="tabs Tabs" data-panes="#spamRulePanes > li">
+		<li class="active"><a>{xen:phrase th_spam_prevention_options_spamrules}</a></li>
+		<li><a>{xen:phrase user_criteria}</a></li>
+		<li><a>{xen:phrase date_criteria}</a></li>
+		<li><a>{xen:phrase th_content_criteria_spamrules}</a></li>
+		<li><a>{xen:phrase th_request_criteria_spamrules}</a></li>
+	</ul>
+	
+	<ul id="spamRulePanes">
+		<li>
+			<xen:textboxunit label="{xen:phrase th_spam_rule_title_spamrules}:" name="title" value="{$spamRule.title}" data-liveTitleTemplate="{xen:if {$spamRule.spam_rule_id},
+				'{xen:phrase th_edit_spam_rule_spamrules}: <em>%s</em>',
+				'{xen:phrase th_create_new_spam_rule_spamrules}: <em>%s</em>'}" />
+			<xen:radiounit label="{xen:phrase action}:" name="action" value="{$spamRule.action}">
+				<xen:option value="moderate">{xen:phrase manually_approve}</xen:option>
+				<xen:option value="reject">{xen:phrase reject}</xen:option>
+			</xen:radiounit>
+		</li>
+		<li><xen:include template="helper_criteria_user" /></li>
+		<li><xen:include template="helper_criteria_user_date" /></li>
+		<li><xen:include template="th_helper_content_criteria_spamrules" /></li>
+		<li><xen:include template="th_helper_request_criteria_spamrules" /></li>
+	</ul>
+		
+	<xen:submitunit>
+		<input type="submit" name="saveexit" value="{xen:phrase save_and_exit}" accesskey="e" class="button primary" id="saveExitButton" />
+		<input type="submit" name="reload" value="{xen:phrase save_changes}" accesskey="s" class="button" id="saveReloadButton" data-ajaxvalue="{xen:phrase save_all_changes}" />
+		<xen:if is="{$spamRule.spam_rule_id}">
+			<input type="button" value="{xen:phrase th_delete_spam_rule_spamrules}..." accesskey="d" class="button OverlayTrigger"
+				data-href="{xen:adminlink spam-rules/delete, $spamRule}" />
+		</xen:if>
+	</xen:submitunit>
+</xen:form>]]></template>
+    <template title="th_spam_rule_list_spamrules"><![CDATA[<xen:title>{xen:phrase th_spam_rules_spamrules}</xen:title>
+
+<xen:h1>{xen:phrase th_spam_rules_spamrules}</xen:h1>
+
+<xen:topctrl>
+	<a href="{xen:adminlink 'spam-rules/add'}" class="button">+ {xen:phrase th_create_new_spam_rule_spamrules}</a>
+</xen:topctrl>
+
+<xen:require css="filter_list.css" />
+<xen:require js="js/xenforo/filter_list.js" />
+
+<xen:form action="{xen:adminlink 'spam-rules/toggle'}" class="section AutoValidator">
+
+	<xen:if is="{$spamRules}">
+		<h2 class="subHeading">
+			<xen:include template="filter_list_controls" />
+			{xen:phrase th_spam_rules_spamrules}
+		</h2>
+
+		<ol class="FilterList">
+			<xen:foreach loop="$spamRules" key="$spamRuleId" value="$spamRule">
+				<xen:listitem id="{$spamRuleId}"
+					label="{xen:raw $spamRule.title}"
+					href="{xen:adminlink 'spam-rules/edit', $spamRule}"
+					delete="{xen:adminlink 'spam-rules/delete', $spamRule}"
+					deletehint="{xen:phrase delete}">
+				</xen:listitem>
+			</xen:foreach>
+		</ol>
+
+		<p class="sectionFooter">{xen:phrase showing_x_of_y_items, 'count=<span class="FilterListCount">{xen:count $spamRules}</span>', 'total={xen:count $spamRules}'}</p>
+
+	<xen:else />
+		<div class="noResults">{xen:phrase th_there_are_no_spam_rules_spamrules}</div>
+	</xen:if>
+
+</xen:form>]]></template>
+    <template title="th_user_spam_rule_delete_spamrules"><![CDATA[<xen:title>{xen:phrase th_confirm_deletion_of_user_spam_rule_spamrules}: {$userSpamRule.title}</xen:title>
+
+<xen:h1>{xen:phrase th_confirm_deletion_of_user_spam_rule_spamrules}</xen:h1>
+
+<xen:navigation>
+	<xen:breadcrumb href="{xen:adminlink 'user-spam-rules/edit', $userSpamRule}">{$userSpamRule.title}</xen:breadcrumb>
+</xen:navigation>
+
+<xen:require css="delete_confirmation.css" />
+
+<xen:form action="{xen:adminlink 'user-spam-rules/delete', $userSpamRule}" class="deleteConfirmForm formOverlay">
+
+	<p>{xen:phrase th_please_confirm_want_to_delete_user_spam_rule_spamrules}:</p>
+	<strong><a href="{xen:adminlink 'user-spam-rules/edit', $userSpamRule}">{$userSpamRule.title}</a></strong>
+
+	<xen:submitunit save="{xen:phrase th_delete_user_spam_rule_spamrules}" />
+
+	<input type="hidden" name="_xfConfirm" value="1" />
+</xen:form>]]></template>
+    <template title="th_user_spam_rule_edit_spamrules"><![CDATA[<xen:title>{xen:if '{$userSpamRule.user_spam_rule_id}', '{xen:phrase th_edit_user_spam_rule_spamrules}: {$userSpamRule.title}', '{xen:phrase th_create_new_user_spam_rule_spamrules}'}</xen:title>
+
+<xen:h1>{xen:if '{$userSpamRule.user_spam_rule_id}', '{xen:phrase th_edit_user_spam_rule_spamrules}: <em>{$userSpamRule.title}</em>', '{xen:phrase th_create_new_user_spam_rule_spamrules}'}</xen:h1>
+
+<xen:if is="{$userSpamRule.user_spam_rule_id}">
+	<xen:navigation>
+		<xen:breadcrumb href="{xen:adminlink 'user-spam-rules'}#{xen:helper listitemid, $userSpamRule.user_spam_rule_id}">{$userSpamRule.title}</xen:breadcrumb>
+	</xen:navigation>
+</xen:if>
+
+<xen:form action="{xen:adminlink 'user-spam-rules/save', $userSpamRule}"
+	class="AutoValidator"
+	data-fieldValidatorUrl="{xen:adminlink '/validate-field', $userSpamRule}"
+	data-redirect="on">
+
+	<ul class="tabs Tabs" data-panes="#spamRulePanes > li">
+		<li class="active"><a>{xen:phrase th_user_spam_prevention_options_spamrules}</a></li>
+		<li><a>{xen:phrase user_criteria}</a></li>
+		<li><a>{xen:phrase date_criteria}</a></li>
+		<li><a>{xen:phrase th_request_criteria_spamrules}</a></li>
+	</ul>
+	
+	<ul id="spamRulePanes">
+		<li>
+			<xen:textboxunit label="{xen:phrase th_user_spam_rule_title_spamrules}:" name="title" value="{$userSpamRule.title}" data-liveTitleTemplate="{xen:if {$userSpamRule.user_spam_rule_id},
+				'{xen:phrase th_edit_user_spam_rule_spamrules}: <em>%s</em>',
+				'{xen:phrase th_create_new_user_spam_rule_spamrules}: <em>%s</em>'}" />
+			<xen:radiounit label="{xen:phrase action}:" name="action" value="{$userSpamRule.action}">
+				<xen:option value="moderate">{xen:phrase manually_approve}</xen:option>
+				<xen:option value="reject">{xen:phrase reject}</xen:option>
+			</xen:radiounit>
+		</li>
+		<li><xen:include template="helper_criteria_user" /></li>
+		<li><xen:include template="helper_criteria_user_date" /></li>
+		<li><xen:include template="th_helper_request_criteria_spamrules" /></li>
+	</ul>
+
+	<xen:submitunit>
+		<input type="submit" name="saveexit" value="{xen:phrase save_and_exit}" accesskey="e" class="button primary" id="saveExitButton" />
+		<input type="submit" name="reload" value="{xen:phrase save_changes}" accesskey="s" class="button" id="saveReloadButton" data-ajaxvalue="{xen:phrase save_all_changes}" />
+		<xen:if is="{$userSpamRule.user_spam_rule_id}">
+			<input type="button" value="{xen:phrase th_delete_user_spam_rule_spamrules}..." accesskey="d" class="button OverlayTrigger"
+				data-href="{xen:adminlink user-spam-rules/delete, $userSpamRule}" />
+		</xen:if>
+	</xen:submitunit>
+</xen:form>]]></template>
+    <template title="th_user_spam_rule_list_spamrules"><![CDATA[<xen:title>{xen:phrase th_user_spam_rules_spamrules}</xen:title>
+<xen:description>{xen:phrase th_user_spam_rules_are_checked_against_when_a_user_registers_spamrules}</xen:description>
+
+<xen:topctrl>
+	<a href="{xen:adminlink 'user-spam-rules/add'}" class="button">+ {xen:phrase th_create_new_user_spam_rule_spamrules}</a>
+</xen:topctrl>
+
+<xen:require css="filter_list.css" />
+<xen:require js="js/xenforo/filter_list.js" />
+
+<xen:form action="{xen:adminlink 'user-spam-rules/toggle'}" class="section AutoValidator">
+
+	<xen:if is="{$userSpamRules}">
+		<h2 class="subHeading">
+			<xen:include template="filter_list_controls" />
+			{xen:phrase th_user_spam_rules_spamrules}
+		</h2>
+
+		<ol class="FilterList">
+			<xen:foreach loop="$userSpamRules" key="$userSpamRuleId" value="$userSpamRule">
+				<xen:listitem id="{$userSpamRuleId}"
+					label="{xen:raw $userSpamRule.title}"
+					snippet="{$userSpamRule.subtitle}"
+					href="{xen:adminlink 'user-spam-rules/edit', $userSpamRule}"
+					delete="{xen:adminlink 'user-spam-rules/delete', $userSpamRule}"
+					deletehint="{xen:phrase delete}">
+				</xen:listitem>
+			</xen:foreach>
+		</ol>
+
+		<p class="sectionFooter">{xen:phrase showing_x_of_y_items, 'count=<span class="FilterListCount">{xen:count $userSpamRules}</span>', 'total={xen:count $userSpamRules}'}</p>
+
+	<xen:else />
+		<div class="noResults">{xen:phrase th_there_are_no_user_spam_rules_spamrules}</div>
+	</xen:if>
+
+</xen:form>]]></template>
+  </admin_templates>
+  <admin_template_modifications/>
+  <code_events/>
+  <code_event_listeners>
+    <listener event_id="controller_pre_dispatch" execute_order="10" callback_class="ThemeHouse_Listener_ControllerPreDispatch" callback_method="controllerPreDispatch" active="1" hint="" description=""/>
+    <listener event_id="file_health_check" execute_order="10" callback_class="ThemeHouse_SpamRules_Listener_FileHealthCheck" callback_method="fileHealthCheck" active="1" hint="" description=""/>
+    <listener event_id="init_dependencies" execute_order="10" callback_class="ThemeHouse_Listener_InitDependencies" callback_method="initDependencies" active="1" hint="" description=""/>
+    <listener event_id="load_class" execute_order="10" callback_class="ThemeHouse_SpamRules_Listener_LoadClass" callback_method="loadClassModel" active="0" hint="XenForo_Model_SpamPrevention" description="XenForo_Model_SpamPrevention (For XenForo 1.2 and above)" compatibility_switch="1"/>
+    <listener event_id="load_class_model" execute_order="10" callback_class="ThemeHouse_SpamRules_Listener_LoadClass" callback_method="loadClassModel" active="1" hint="" description="(For XenForo 1.1 and below)" compatibility_switch="1"/>
+  </code_event_listeners>
+  <cron/>
+  <email_templates/>
+  <email_template_modifications/>
+  <optiongroups>
+    <group group_id="th_spamRules" display_order="2000" debug_only="0"/>
+    <option option_id="th_spamRules_countries" edit_format="textbox" data_type="string" can_backup="1">
+      <default_value>A1,"Anonymous Proxy"
+A2,"Satellite Provider"
+O1,"Other Country"
+AD,"Andorra"
+AE,"United Arab Emirates"
+AF,"Afghanistan"
+AG,"Antigua and Barbuda"
+AI,"Anguilla"
+AL,"Albania"
+AM,"Armenia"
+AO,"Angola"
+AP,"Asia/Pacific Region"
+AQ,"Antarctica"
+AR,"Argentina"
+AS,"American Samoa"
+AT,"Austria"
+AU,"Australia"
+AW,"Aruba"
+AX,"Aland Islands"
+AZ,"Azerbaijan"
+BA,"Bosnia and Herzegovina"
+BB,"Barbados"
+BD,"Bangladesh"
+BE,"Belgium"
+BF,"Burkina Faso"
+BG,"Bulgaria"
+BH,"Bahrain"
+BI,"Burundi"
+BJ,"Benin"
+BL,"Saint Bartelemey"
+BM,"Bermuda"
+BN,"Brunei Darussalam"
+BO,"Bolivia"
+BQ,"Bonaire, Saint Eustatius and Saba"
+BR,"Brazil"
+BS,"Bahamas"
+BT,"Bhutan"
+BV,"Bouvet Island"
+BW,"Botswana"
+BY,"Belarus"
+BZ,"Belize"
+CA,"Canada"
+CC,"Cocos (Keeling) Islands"
+CD,"Congo, The Democratic Republic of the"
+CF,"Central African Republic"
+CG,"Congo"
+CH,"Switzerland"
+CI,"Cote d'Ivoire"
+CK,"Cook Islands"
+CL,"Chile"
+CM,"Cameroon"
+CN,"China"
+CO,"Colombia"
+CR,"Costa Rica"
+CU,"Cuba"
+CV,"Cape Verde"
+CW,"Curacao"
+CX,"Christmas Island"
+CY,"Cyprus"
+CZ,"Czech Republic"
+DE,"Germany"
+DJ,"Djibouti"
+DK,"Denmark"
+DM,"Dominica"
+DO,"Dominican Republic"
+DZ,"Algeria"
+EC,"Ecuador"
+EE,"Estonia"
+EG,"Egypt"
+EH,"Western Sahara"
+ER,"Eritrea"
+ES,"Spain"
+ET,"Ethiopia"
+EU,"Europe"
+FI,"Finland"
+FJ,"Fiji"
+FK,"Falkland Islands (Malvinas)"
+FM,"Micronesia, Federated States of"
+FO,"Faroe Islands"
+FR,"France"
+GA,"Gabon"
+GB,"United Kingdom"
+GD,"Grenada"
+GE,"Georgia"
+GF,"French Guiana"
+GG,"Guernsey"
+GH,"Ghana"
+GI,"Gibraltar"
+GL,"Greenland"
+GM,"Gambia"
+GN,"Guinea"
+GP,"Guadeloupe"
+GQ,"Equatorial Guinea"
+GR,"Greece"
+GS,"South Georgia and the South Sandwich Islands"
+GT,"Guatemala"
+GU,"Guam"
+GW,"Guinea-Bissau"
+GY,"Guyana"
+HK,"Hong Kong"
+HM,"Heard Island and McDonald Islands"
+HN,"Honduras"
+HR,"Croatia"
+HT,"Haiti"
+HU,"Hungary"
+ID,"Indonesia"
+IE,"Ireland"
+IL,"Israel"
+IM,"Isle of Man"
+IN,"India"
+IO,"British Indian Ocean Territory"
+IQ,"Iraq"
+IR,"Iran, Islamic Republic of"
+IS,"Iceland"
+IT,"Italy"
+JE,"Jersey"
+JM,"Jamaica"
+JO,"Jordan"
+JP,"Japan"
+KE,"Kenya"
+KG,"Kyrgyzstan"
+KH,"Cambodia"
+KI,"Kiribati"
+KM,"Comoros"
+KN,"Saint Kitts and Nevis"
+KP,"Korea, Democratic People's Republic of"
+KR,"Korea, Republic of"
+KW,"Kuwait"
+KY,"Cayman Islands"
+KZ,"Kazakhstan"
+LA,"Lao People's Democratic Republic"
+LB,"Lebanon"
+LC,"Saint Lucia"
+LI,"Liechtenstein"
+LK,"Sri Lanka"
+LR,"Liberia"
+LS,"Lesotho"
+LT,"Lithuania"
+LU,"Luxembourg"
+LV,"Latvia"
+LY,"Libyan Arab Jamahiriya"
+MA,"Morocco"
+MC,"Monaco"
+MD,"Moldova, Republic of"
+ME,"Montenegro"
+MF,"Saint Martin"
+MG,"Madagascar"
+MH,"Marshall Islands"
+MK,"Macedonia"
+ML,"Mali"
+MM,"Myanmar"
+MN,"Mongolia"
+MO,"Macao"
+MP,"Northern Mariana Islands"
+MQ,"Martinique"
+MR,"Mauritania"
+MS,"Montserrat"
+MT,"Malta"
+MU,"Mauritius"
+MV,"Maldives"
+MW,"Malawi"
+MX,"Mexico"
+MY,"Malaysia"
+MZ,"Mozambique"
+NA,"Namibia"
+NC,"New Caledonia"
+NE,"Niger"
+NF,"Norfolk Island"
+NG,"Nigeria"
+NI,"Nicaragua"
+NL,"Netherlands"
+NO,"Norway"
+NP,"Nepal"
+NR,"Nauru"
+NU,"Niue"
+NZ,"New Zealand"
+OM,"Oman"
+PA,"Panama"
+PE,"Peru"
+PF,"French Polynesia"
+PG,"Papua New Guinea"
+PH,"Philippines"
+PK,"Pakistan"
+PL,"Poland"
+PM,"Saint Pierre and Miquelon"
+PN,"Pitcairn"
+PR,"Puerto Rico"
+PS,"Palestinian Territory"
+PT,"Portugal"
+PW,"Palau"
+PY,"Paraguay"
+QA,"Qatar"
+RE,"Reunion"
+RO,"Romania"
+RS,"Serbia"
+RU,"Russian Federation"
+RW,"Rwanda"
+SA,"Saudi Arabia"
+SB,"Solomon Islands"
+SC,"Seychelles"
+SD,"Sudan"
+SE,"Sweden"
+SG,"Singapore"
+SH,"Saint Helena"
+SI,"Slovenia"
+SJ,"Svalbard and Jan Mayen"
+SK,"Slovakia"
+SL,"Sierra Leone"
+SM,"San Marino"
+SN,"Senegal"
+SO,"Somalia"
+SR,"Suriname"
+SS,"South Sudan"
+ST,"Sao Tome and Principe"
+SV,"El Salvador"
+SX,"Sint Maarten"
+SY,"Syrian Arab Republic"
+SZ,"Swaziland"
+TC,"Turks and Caicos Islands"
+TD,"Chad"
+TF,"French Southern Territories"
+TG,"Togo"
+TH,"Thailand"
+TJ,"Tajikistan"
+TK,"Tokelau"
+TL,"Timor-Leste"
+TM,"Turkmenistan"
+TN,"Tunisia"
+TO,"Tonga"
+TR,"Turkey"
+TT,"Trinidad and Tobago"
+TV,"Tuvalu"
+TW,"Taiwan"
+TZ,"Tanzania, United Republic of"
+UA,"Ukraine"
+UG,"Uganda"
+UM,"United States Minor Outlying Islands"
+US,"United States"
+UY,"Uruguay"
+UZ,"Uzbekistan"
+VA,"Holy See (Vatican City State)"
+VC,"Saint Vincent and the Grenadines"
+VE,"Venezuela"
+VG,"Virgin Islands, British"
+VI,"Virgin Islands, U.S."
+VN,"Vietnam"
+VU,"Vanuatu"
+WF,"Wallis and Futuna"
+WS,"Samoa"
+YE,"Yemen"
+YT,"Mayotte"
+ZA,"South Africa"
+ZM,"Zambia"
+ZW,"Zimbabwe"</default_value>
+      <edit_format_params>rows=8</edit_format_params>
+      <sub_options/>
+      <relation group_id="th_spamRules" display_order="1000"/>
+    </option>
+    <option option_id="th_spamRules_removeQuotes" edit_format="onoff" data_type="boolean" can_backup="1">
+      <default_value>0</default_value>
+      <edit_format_params/>
+      <sub_options/>
+      <relation group_id="th_spamRules" display_order="1"/>
+    </option>
+  </optiongroups>
+  <permissions>
+    <permission_groups/>
+    <permissions/>
+    <interface_groups/>
+  </permissions>
+  <phrases>
+    <phrase title="admin_navigation_spamRules" version_id="0" version_string="1.0.0"><![CDATA[Spam Rules]]></phrase>
+    <phrase title="admin_navigation_userSpamRules" version_id="1394735072" version_string="1.0.0"><![CDATA[User Spam Rules]]></phrase>
+    <phrase title="admin_permission_spamRule" version_id="0" version_string="1.0.0"><![CDATA[Manage spam rules]]></phrase>
+    <phrase title="option_group_th_spamRules" version_id="0" version_string="1.0.0"><![CDATA[Spam Rules by ThemeHouse]]></phrase>
+    <phrase title="option_group_th_spamRules_description" version_id="0" version_string="1.0.0"><![CDATA[Options for the Spam Rules by ThemeHouse add-on.]]></phrase>
+    <phrase title="option_th_spamRules_countries" version_id="0" version_string="1.0.0"><![CDATA[List of ISO countries]]></phrase>
+    <phrase title="option_th_spamRules_countries_explain" version_id="0" version_string="1.0.0"><![CDATA[CSV list of ISO countries for use with GeoIP.]]></phrase>
+    <phrase title="option_th_spamRules_removeQuotes" version_id="0" version_string="1.0.0"><![CDATA[Remove quotes before text checks]]></phrase>
+    <phrase title="option_th_spamRules_removeQuotes_explain" version_id="0" version_string="1.0.0"><![CDATA[Selecting this option will mean that text that has been quoted will not be checked when automatically giving warnings. Note that this will not actually check that text within [quote] tags is a direct quote of some other content.]]></phrase>
+    <phrase title="th_confirm_deletion_of_spam_rule_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Confirm Deletion of Spam Rule]]></phrase>
+    <phrase title="th_confirm_deletion_of_user_spam_rule_spamrules" version_id="1394735072" version_string="1.0.0"><![CDATA[Confirm Deletion of User Spam Rule]]></phrase>
+    <phrase title="th_content_contains_at_least_x_links_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Content contains at least X links]]></phrase>
+    <phrase title="th_content_contains_at_least_x_percent_uppercase_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Content contains at least X percent uppercase letters]]></phrase>
+    <phrase title="th_content_contains_specific_words_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Content contains specific words]]></phrase>
+    <phrase title="th_content_criteria_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Content Criteria]]></phrase>
+    <phrase title="th_create_new_spam_rule_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Create New Spam Rule]]></phrase>
+    <phrase title="th_create_new_user_spam_rule_spamrules" version_id="1394735072" version_string="1.0.0"><![CDATA[Create New User Spam Rule]]></phrase>
+    <phrase title="th_delete_spam_rule_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Delete Spam Rule]]></phrase>
+    <phrase title="th_delete_user_spam_rule_spamrules" version_id="1394735072" version_string="1.0.0"><![CDATA[Delete User Spam Rule]]></phrase>
+    <phrase title="th_edit_spam_rule_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Edit Spam Rule]]></phrase>
+    <phrase title="th_edit_user_spam_rule_spamrules" version_id="1394735072" version_string="1.0.0"><![CDATA[Edit User Spam Rule]]></phrase>
+    <phrase title="th_ip_address_is_registered_in_spamrules" version_id="0" version_string="1.0.0"><![CDATA[IP address is registered in]]></phrase>
+    <phrase title="th_please_confirm_want_to_delete_spam_rule_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Please confirm that you want to delete the following spam rule]]></phrase>
+    <phrase title="th_please_confirm_want_to_delete_user_spam_rule_spamrules" version_id="1394735072" version_string="1.0.0"><![CDATA[Please confirm that you want to delete the following user spam rule]]></phrase>
+    <phrase title="th_requested_spam_rule_not_found_spamrules" version_id="0" version_string="1.0.0"><![CDATA[The requested spam rule could not be found.]]></phrase>
+    <phrase title="th_requested_user_spam_rule_not_found_spamrules" version_id="1394735072" version_string="1.0.0"><![CDATA[The requested user spam rule could not be found.]]></phrase>
+    <phrase title="th_request_criteria_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Request Criteria]]></phrase>
+    <phrase title="th_spam_prevention_options_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Spam Prevention Options]]></phrase>
+    <phrase title="th_spam_rules_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Spam Rules]]></phrase>
+    <phrase title="th_spam_rule_subtitle_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Subtitle]]></phrase>
+    <phrase title="th_spam_rule_title_spamrules" version_id="0" version_string="1.0.0"><![CDATA[Title]]></phrase>
+    <phrase title="th_there_are_no_spam_rules_spamrules" version_id="0" version_string="1.0.0"><![CDATA[There are no spam rules.]]></phrase>
+    <phrase title="th_there_are_no_user_spam_rules_spamrules" version_id="1394735072" version_string="1.0.0"><![CDATA[There are no user spam rules.]]></phrase>
+    <phrase title="th_user_has_open_port_spamrules" version_id="1394735072" version_string="1.0.0"><![CDATA[User has open port]]></phrase>
+    <phrase title="th_user_has_open_port_userregspam" version_id="1416220429" version_string="1.1.0"><![CDATA[User has open port]]></phrase>
+    <phrase title="th_user_spam_prevention_options_spamrules" version_id="1394735072" version_string="1.0.0"><![CDATA[User Spam Prevention Options]]></phrase>
+    <phrase title="th_user_spam_rules_are_checked_against_when_a_user_registers_spamrules" version_id="1416902535" version_string="1.1.2"><![CDATA[User spam rules are checked against when a user registers for this site.]]></phrase>
+    <phrase title="th_user_spam_rules_spamrules" version_id="1394735072" version_string="1.0.0"><![CDATA[User Spam Rules]]></phrase>
+    <phrase title="th_user_spam_rule_title_spamrules" version_id="1394735072" version_string="1.0.0"><![CDATA[Title]]></phrase>
+  </phrases>
+  <route_prefixes>
+    <route_type type="admin">
+      <prefix original_prefix="spam-rules" class="ThemeHouse_SpamRules_Route_PrefixAdmin_SpamRules" build_link="data_only"/>
+      <prefix original_prefix="user-spam-rules" class="ThemeHouse_SpamRules_Route_PrefixAdmin_UserSpamRules" build_link="data_only"/>
+    </route_type>
+  </route_prefixes>
+  <style_properties/>
+  <templates/>
+  <public_template_modifications>
+    <modification template="footer" modification_key="th_copyrightNotice_spamRules" description="Copyright notice for [⌂] Spam Rules" execution_order="1" enabled="1" action="callback">
+      <find><![CDATA[/{xen:phrase (?:xenforo|extra)_copyright}/]]></find>
+      <replace><![CDATA[ThemeHouse_Listener_InitDependencies::copyrightNotice]]></replace>
+    </modification>
+  </public_template_modifications>
+  <bb_code_media_sites/>
+  <bb_codes/>
+</addon>
